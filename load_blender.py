@@ -34,7 +34,7 @@ def pose_spherical(theta, phi, radius):
     return c2w
 
 
-def load_blender_data(basedir, half_res=False, testskip=1):
+def load_blender_data(basedir, res=1, testskip=1):
     splits = ['train', 'val', 'test']
     metas = {}
     for s in splits:
@@ -73,18 +73,23 @@ def load_blender_data(basedir, half_res=False, testskip=1):
     focal = .5 * W / np.tan(.5 * camera_angle_x)
     
     render_poses = torch.stack([pose_spherical(angle, -30.0, 4.0) for angle in np.linspace(-180,180,40+1)[:-1]], 0)
-    
-    if half_res:
-        H = H//2
-        W = W//2
-        focal = focal/2.
 
-        imgs_half_res = np.zeros((imgs.shape[0], H, W, 4))
-        for i, img in enumerate(imgs):
-            imgs_half_res[i] = cv2.resize(img, (W, H), interpolation=cv2.INTER_AREA)
-        imgs = imgs_half_res
-        # imgs = tf.image.resize_area(imgs, [400, 400]).numpy()
+    # Modify resolution to user's preference
+    if res != 1:
+        temp_H = int(H / (1 / res))
+        temp_W = int(W / (1 / res))
+        temp_focal = focal // (1 / res)
 
+        if (temp_H * temp_W * temp_focal != 0): # Ensure valid heights and widths
+            imgs_half_res = np.zeros((imgs.shape[0], temp_H, temp_W, 4))
+            for i, img in enumerate(imgs):
+                imgs_half_res[i] = cv2.resize(img, (temp_W, temp_H), interpolation=cv2.INTER_AREA)
+            imgs = imgs_half_res
+
+            # Update values for return
+            H = temp_H
+            W = temp_W
+            focal = temp_focal
         
     return imgs, poses, render_poses, [H, W, focal], i_split
 
