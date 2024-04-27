@@ -7,3 +7,8 @@ configargparse
 tensorboard>=2.0
 tqdm
 opencv-python
+commentjson
+opencv-python-headless
+pybind11
+pyquaternion
+scipy
